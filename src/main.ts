@@ -16,11 +16,31 @@ async function bootstrap() {
     expressApp.set('trust proxy', 1);
   }
 
-  // Enable CORS
-  app.enableCors();
+  // Enable CORS (browser form / dashboard on a different origin)
+  app.enableCors({
+    origin: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Accept',
+      'Accept-Language',
+      'Authorization',
+      'X-Requested-With',
+      'Idempotency-Key',
+    ],
+    exposedHeaders: ['Content-Disposition'],
+    credentials: false,
+    maxAge: 86400,
+  });
 
-  // Apply security headers
-  app.use(helmet());
+  // Helmet defaults to Cross-Origin-Resource-Policy: same-origin, which blocks
+  // cross-origin fetch even when Access-Control-Allow-Origin is present.
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: false,
+    }),
+  );
 
   // Enable compression
   app.use(compression());
