@@ -1,0 +1,72 @@
+import { LeadEntity } from '../../entities/lead.entity';
+import type { AttributionSnapshot } from '../../types/attribution.types';
+
+export class LeadAdminResponseDto {
+  id: number;
+  publicId: string;
+  submissionId: string;
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+  unitSlug: string | null;
+  sourcePath: string;
+  referrer: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  firstTouchSource: string | null;
+  lastTouchSource: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmTerm: string | null;
+  utmContent: string | null;
+  utmId: string | null;
+  gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
+  landingPageFirst: string | null;
+  landingPageLast: string | null;
+  attribution: AttributionSnapshot | null;
+  turnstileSucceeded: boolean;
+  emailSentAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+
+  static fromEntity(entity: LeadEntity): LeadAdminResponseDto {
+    const dto = new LeadAdminResponseDto();
+    dto.id = entity.id;
+    dto.publicId = entity.publicId;
+    dto.submissionId = entity.submissionId;
+    dto.name = entity.name;
+    dto.email = entity.email;
+    dto.phone = entity.phone;
+    dto.subject = entity.subject;
+    dto.message = entity.message;
+    dto.unitSlug = entity.unitSlug;
+    dto.sourcePath = entity.sourcePath;
+    dto.referrer = entity.referrer;
+    dto.ipAddress = entity.ipAddress;
+    dto.userAgent = entity.userAgent;
+    dto.firstTouchSource = entity.firstTouchSource;
+    dto.lastTouchSource = entity.lastTouchSource;
+    dto.utmSource = entity.utmSource;
+    dto.utmMedium = entity.utmMedium;
+    dto.utmCampaign = entity.utmCampaign;
+    dto.utmTerm = entity.utmTerm;
+    dto.utmContent = entity.utmContent;
+    dto.utmId = entity.utmId;
+    dto.gclid = entity.gclid;
+    dto.gbraid = entity.gbraid;
+    dto.wbraid = entity.wbraid;
+    dto.landingPageFirst = entity.landingPageFirst;
+    dto.landingPageLast = entity.landingPageLast;
+    dto.attribution = entity.attribution;
+    dto.turnstileSucceeded = entity.turnstileSucceeded;
+    dto.emailSentAt = entity.emailSentAt;
+    dto.createdAt = entity.createdAt;
+    dto.updatedAt = entity.updatedAt;
+    return dto;
+  }
+}

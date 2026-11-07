@@ -10,6 +10,12 @@ import { GlobalExceptionFilter } from './shared/filters/global-exception.filter'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Required for correct req.ip behind Vercel / Cloudflare / reverse proxies
+  const expressApp = app.getHttpAdapter().getInstance();
+  if (typeof expressApp?.set === 'function') {
+    expressApp.set('trust proxy', 1);
+  }
+
   // Enable CORS
   app.enableCors();
 

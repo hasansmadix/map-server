@@ -17,14 +17,19 @@ import { PaginationModule } from './common/pagination/pagination.module';
 import { EquipmentModule } from './modules/equipment/equipment.module';
 import { BroadcastModule } from './modules/broadcast/broadcast.module';
 import { IntentModule } from './modules/intent/intent.module';
+import { LeadsModule } from './modules/leads/leads.module';
+import { MailModule } from './shared/modules/mail/mail.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule,
+    ScheduleModule.forRoot(),
     DatabaseModule,
     AppJwtModule,
     UploadModule,
     SupabaseModule,
+    MailModule,
     StaffModule,
     SettingsModule,
     LanguagesModule,
@@ -35,6 +40,7 @@ import { IntentModule } from './modules/intent/intent.module';
     EquipmentModule,
     BroadcastModule,
     IntentModule,
+    LeadsModule,
   ],
 
   controllers: [AppController],
