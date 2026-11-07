@@ -36,7 +36,7 @@ export class LeadsService {
     dto: CreateLeadDto,
     meta: { ip?: string | null; userAgent?: string | null },
   ): Promise<LeadPublicResponseDto> {
-    if (dto.mapHp) {
+    if (dto.mapHp || dto.company) {
       throw new BadRequestException('Invalid submission');
     }
 

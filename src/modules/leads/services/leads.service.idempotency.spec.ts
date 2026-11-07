@@ -116,4 +116,12 @@ describe('LeadsService idempotency + rate limit ordering', () => {
     ).rejects.toThrow('Invalid submission');
     expect(contactLeadRateLimit.assertNewSubmissionAllowed).not.toHaveBeenCalled();
   });
+
+  it('legacy company honeypot rejects before rate limit', async () => {
+    const { service, contactLeadRateLimit } = buildService({ existing: null });
+    await expect(
+      service.createPublic({ ...baseDto, company: 'bot' }, { ip: '1.1.1.1' }),
+    ).rejects.toThrow('Invalid submission');
+    expect(contactLeadRateLimit.assertNewSubmissionAllowed).not.toHaveBeenCalled();
+  });
 });

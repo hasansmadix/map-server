@@ -77,4 +77,8 @@ export class CreateLeadDto {
    */
   @Allow()
   mapHp?: string;
+
+  /** Legacy honeypot name — kept so older Web builds are not rejected by forbidNonWhitelisted. */
+  @Allow()
+  company?: string;
 }
