@@ -30,8 +30,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const responseObj = exceptionResponse as any;
-        message = responseObj.message || exception.message;
-        errors = responseObj.errors;
+        const rawMessage = responseObj.message || exception.message;
+        // ValidationPipe returns message as string[]; flatten for logs + clients
+        message = Array.isArray(rawMessage) ? rawMessage.join('; ') : rawMessage;
+        errors = responseObj.errors ?? (Array.isArray(rawMessage) ? rawMessage : undefined);
       }
     }
     // Handle custom domain exceptions

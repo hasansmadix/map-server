@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  Allow,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -55,9 +56,10 @@ export class CreateLeadDto {
   sourcePath?: string;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsString()
   @MaxLength(2048)
-  referrer?: string;
+  referrer?: string | null;
 
   @IsOptional()
   @ValidateNested()
@@ -69,10 +71,10 @@ export class CreateLeadDto {
   @MaxLength(2048)
   turnstileToken?: string;
 
-  /** Honeypot — must be empty when present */
-  @IsOptional()
-  @ValidateIf((_, value) => value !== undefined && value !== null && value !== '')
-  @IsString()
-  @MaxLength(0, { message: 'Invalid submission' })
-  company?: string;
+  /**
+   * Honeypot — obscure name to avoid browser autofill.
+   * Validated in service only (not MaxLength(0) here — that produced opaque 400s when autofilled).
+   */
+  @Allow()
+  mapHp?: string;
 }

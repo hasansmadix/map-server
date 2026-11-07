@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import {
+  IsDateString,
   IsIn,
-  IsISO8601,
   IsInt,
   IsObject,
   IsOptional,
@@ -9,6 +9,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -66,7 +67,7 @@ export class TouchRecordDto {
   @MaxLength(64)
   classifiedSource: string;
 
-  @IsISO8601()
+  @IsDateString()
   touchedAt: string;
 
   @IsString()
@@ -74,6 +75,7 @@ export class TouchRecordDto {
   landingPage: string;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsString()
   @MaxLength(2048)
   referrer: string | null;
@@ -99,11 +101,13 @@ export class AttributionSnapshotDto {
   windowDays: number;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @ValidateNested()
   @Type(() => TouchRecordDto)
   firstTouch: TouchRecordDto | null;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @ValidateNested()
   @Type(() => TouchRecordDto)
   lastTouch: TouchRecordDto | null;
@@ -117,10 +121,11 @@ export class AttributionSnapshotDto {
   submitPage: string;
 
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsString()
   @MaxLength(2048)
   submitReferrer: string | null;
 
-  @IsISO8601()
+  @IsDateString()
   capturedAt: string;
 }

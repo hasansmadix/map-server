@@ -7,7 +7,7 @@
 Spam controls:
 
 - Cloudflare Turnstile
-- Honeypot field `company` (must be empty)
+- Honeypot field `mapHp` (must be empty; checked in service, not via MaxLength(0))
 - Dedicated IP sliding-window rate limit (not the auth progressive ladder)
 
 Response: `{ publicId, submissionId, createdAt }` only.
