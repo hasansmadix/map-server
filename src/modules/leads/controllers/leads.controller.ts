@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { LeadsService } from '../services/leads.service';
 import { CreateLeadDto } from '../dtos/request/create-lead.dto';
@@ -21,8 +10,6 @@ import { Protected } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
 import { PositiveIntPipe } from 'src/common/pipes/positive-int.pipe';
 import { PaginationResponseDto } from 'src/common/pagination/dto/pagination-response.dto';
-import { RateLimit, RateLimitKey } from 'src/common/decorators/rate-limit.decorator';
-import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 
 @Controller()
 export class LeadsController {
@@ -30,11 +17,11 @@ export class LeadsController {
 
   @Post('leads')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(RateLimitGuard)
-  @RateLimit({ key: RateLimitKey.CONTACT_LEAD, identifierType: 'ip' })
   @SerializeResponse(LeadPublicResponseDto)
   create(@Body() dto: CreateLeadDto, @Req() req: Request): Promise<LeadPublicResponseDto> {
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
+    // Prefer Express trust-proxy IP; fall back to first X-Forwarded-For hop.
+    const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+    const ip = req.ip || forwarded || null;
     const userAgent = req.headers['user-agent'] || null;
     return this.leadsService.createPublic(dto, { ip, userAgent });
   }

@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { TooManyRequestsException } from 'src/common/exceptions/too-many-requests.exception';
 
 // Define a base interface for custom exceptions
 interface CustomException extends Error {
@@ -79,10 +80,25 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return response.status(status).end();
     }
 
+    let retryAfter: number | undefined;
+    if (exception instanceof TooManyRequestsException) {
+      retryAfter = exception.retryAfterSeconds;
+      response.setHeader('Retry-After', String(retryAfter));
+    } else if (status === HttpStatus.TOO_MANY_REQUESTS && typeof exception === 'object' && exception !== null) {
+      const body = exception instanceof HttpException ? exception.getResponse() : null;
+      if (body && typeof body === 'object' && 'retryAfter' in body) {
+        retryAfter = Number((body as { retryAfter?: number }).retryAfter);
+        if (Number.isFinite(retryAfter) && retryAfter > 0) {
+          response.setHeader('Retry-After', String(retryAfter));
+        }
+      }
+    }
+
     const errorResponse = {
       statusCode: status,
       message,
       ...(errors && { errors }),
+      ...(retryAfter ? { retryAfter } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,

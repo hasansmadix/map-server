@@ -34,4 +34,14 @@ export class RedisService {
   async keys(pattern: string) {
     return this.client.keys(pattern);
   }
+
+  /** Run a Lua script atomically (EVAL). */
+  async eval(script: string, keys: string[], args: (string | number)[]): Promise<unknown> {
+    return this.client.eval(script, keys.length, ...keys, ...args.map(String));
+  }
+
+  /** Expose client for tests / advanced ops. Prefer eval/set/get in app code. */
+  getClient(): Redis {
+    return this.client;
+  }
 }

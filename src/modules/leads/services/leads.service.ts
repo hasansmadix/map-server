@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { LeadEntity } from '../entities/lead.entity';
@@ -12,6 +12,7 @@ import { PaginationService } from 'src/common/pagination/paginate.service';
 import { PaginationResponseDto } from 'src/common/pagination/dto/pagination-response.dto';
 import { paginateAuto } from 'src/common/db/pagination.helper';
 import { TurnstileService } from './turnstile.service';
+import { ContactLeadRateLimitService } from './contact-lead-rate-limit.service';
 import { normalizePlainText, truncate } from '../utils/normalize-text';
 import {
   classifySourceFromTouch,
@@ -28,6 +29,7 @@ export class LeadsService {
     private readonly dataSource: DataSource,
     private readonly pagination: PaginationService,
     private readonly turnstile: TurnstileService,
+    private readonly contactLeadRateLimit: ContactLeadRateLimitService,
   ) {}
 
   async createPublic(
@@ -38,9 +40,21 @@ export class LeadsService {
       throw new BadRequestException('Invalid submission');
     }
 
+    const email = normalizePlainText(dto.email, 128).toLowerCase();
+
     const existing = await this.leadRepo.findOne({ where: { submissionId: dto.submissionId } });
     if (existing) {
+      // Idempotent replay only when the same submitter identity matches.
+      // Prevents leaking existence of another party's submissionId.
+      if (existing.email.toLowerCase() !== email) {
+        throw new ConflictException('Invalid submission');
+      }
       return LeadPublicResponseDto.fromEntity(existing);
+    }
+
+    const ip = (meta.ip || '').trim();
+    if (ip) {
+      await this.contactLeadRateLimit.assertNewSubmissionAllowed(ip, dto.submissionId);
     }
 
     const turnstileSucceeded = await this.turnstile.verify(dto.turnstileToken, meta.ip);
@@ -50,7 +64,6 @@ export class LeadsService {
     const first = attribution?.firstTouch ?? null;
 
     const name = normalizePlainText(dto.name, 128);
-    const email = normalizePlainText(dto.email, 128).toLowerCase();
     const phone = normalizePlainText(dto.phone, 32);
     const subject = normalizePlainText(dto.subject, 256);
     const message = normalizePlainText(dto.message, 2048);
@@ -84,21 +97,29 @@ export class LeadsService {
       turnstileSucceeded,
     });
 
-    const saved = await this.dataSource.transaction(async (manager) => {
-      const leadEntity = await manager.save(LeadEntity, lead);
-      await manager.save(
-        LeadNotificationOutboxEntity,
-        manager.create(LeadNotificationOutboxEntity, {
-          leadId: leadEntity.id,
-          status: LeadNotificationStatus.PENDING,
-          attempts: 0,
-          nextRetryAt: new Date(),
-        }),
-      );
-      return leadEntity;
-    });
-
-    return LeadPublicResponseDto.fromEntity(saved);
+    try {
+      const saved = await this.dataSource.transaction(async (manager) => {
+        const leadEntity = await manager.save(LeadEntity, lead);
+        await manager.save(
+          LeadNotificationOutboxEntity,
+          manager.create(LeadNotificationOutboxEntity, {
+            leadId: leadEntity.id,
+            status: LeadNotificationStatus.PENDING,
+            attempts: 0,
+            nextRetryAt: new Date(),
+          }),
+        );
+        return leadEntity;
+      });
+      return LeadPublicResponseDto.fromEntity(saved);
+    } catch (err) {
+      // Concurrent duplicate submissionId — return existing if email matches
+      const raced = await this.leadRepo.findOne({ where: { submissionId: dto.submissionId } });
+      if (raced && raced.email.toLowerCase() === email) {
+        return LeadPublicResponseDto.fromEntity(raced);
+      }
+      throw err;
+    }
   }
 
   async findAllAdmin(dto: LeadFilterDto): Promise<PaginationResponseDto<LeadAdminResponseDto>> {
